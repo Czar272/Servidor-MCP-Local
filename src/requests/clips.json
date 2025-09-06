@@ -1,0 +1,16 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "clips",
+    "arguments": {
+      "video": "samples/videos/videoSample1.mp4",
+      "transcript": "samples/transcripts/transcript_test1.srt",
+      "count": 2,
+      "minSec": 20,
+      "maxSec": 30,
+      "withGameplay": false
+    }
+  }
+}
