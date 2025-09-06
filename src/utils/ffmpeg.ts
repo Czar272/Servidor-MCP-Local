@@ -1,6 +1,8 @@
-import { exec } from "child_process";
-import { promisify } from "util";
-const execAsync = promisify(exec);
+import ffmpegPath from "ffmpeg-static";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 export async function cutClips(
   video: string,
@@ -8,15 +10,22 @@ export async function cutClips(
   minSec: number,
   maxSec: number
 ): Promise<string[]> {
-  // Aquí usarías lógica para elegir segmentos (mock por ahora)
   const clips: string[] = [];
   for (let i = 0; i < count; i++) {
     const out = `clip_${i}.mp4`;
-    await execAsync(
-      `ffmpeg -i ${video} -ss ${
-        i * 60
-      } -t ${minSec} -vf "scale=1080:1920" ${out}`
-    );
+
+    await execFileAsync(ffmpegPath as string, [
+      "-i",
+      video,
+      "-ss",
+      String(i * 60),
+      "-t",
+      String(minSec),
+      "-vf",
+      "scale=1080:1920",
+      out,
+    ]);
+
     clips.push(out);
   }
   return clips;
@@ -26,9 +35,13 @@ export async function addSubtitles(
   video: string,
   transcript: string
 ): Promise<string> {
-  const srtFile = "subs.srt";
-  // Guardar transcript en formato SRT...
   const out = `subtitled_${video}`;
-  await execAsync(`ffmpeg -i ${video} -vf subtitles=${srtFile} ${out}`);
+  await execFileAsync(ffmpegPath as string, [
+    "-i",
+    video,
+    "-vf",
+    `subtitles=${transcript}`,
+    out,
+  ]);
   return out;
 }
