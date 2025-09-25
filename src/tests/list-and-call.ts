@@ -17,7 +17,7 @@ srv.stdout.on("data", (chunk: Buffer) => {
     buf = buf.slice(i + 1);
     if (!line) continue;
     const msg = JSON.parse(line);
-    console.log("🔵 RX:\n" + JSON.stringify(msg, null, 2));
+    console.log("RX:\n" + JSON.stringify(msg, null, 2));
 
     if (msg.id === 1 && msg.result) {
       send(srv, { jsonrpc: "2.0", method: "initialized" });

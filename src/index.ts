@@ -31,7 +31,7 @@ const PublishShape = {
 };
 const PublishSchema = z.object(PublishShape);
 
-// ---- Servidor MCP (alto nivel) ----
+// ---- Servidor MCP ----
 const server = new McpServer({ name: "repurposing-local", version: "0.1.0" });
 
 server.registerTool(
@@ -40,10 +40,10 @@ server.registerTool(
     title: "Transcribe audio from a video file",
     description:
       "Runs local transcription and returns transcript path or text.",
-    inputSchema: TranscribeShape, // <- RAW SHAPE, no z.object(...)
+    inputSchema: TranscribeShape,
   },
   async (args) => {
-    const { file } = TranscribeSchema.parse(args); // tipado seguro
+    const { file } = TranscribeSchema.parse(args);
     const { transcript } = await handleTranscribe({ file });
     return {
       content: [{ type: "text", text: JSON.stringify({ transcript }) }],
@@ -98,5 +98,5 @@ server.registerTool(
 // Conectar por stdio
 await server.connect(new StdioServerTransport());
 
-// Logs a stderr (no contaminar stdout JSON-RPC)
-console.error("🎬 MCP Local Repurposing Server running...");
+// Logs a stderr
+console.error("MCP Local Repurposing Server running...");

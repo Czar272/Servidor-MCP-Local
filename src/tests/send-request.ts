@@ -29,7 +29,7 @@ async function main() {
       if (!line) continue;
       try {
         const msg = JSON.parse(line);
-        console.log("🔵 RX:", msg);
+        console.log("RX:", msg);
 
         // Cuando recibimos la respuesta a initialize (id=1), enviamos initialized y luego tools/call
         if (msg.id === 1 && msg.result) {

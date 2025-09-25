@@ -1,8 +1,12 @@
-export const servers = {
-  // Tu servidor local (ya compilado en dist/index.js)
+export type ServerSpec = { cmd: string; args: string[] };
+
+export const servers: {
+  local: ServerSpec;
+  fs: ServerSpec | null;
+  git: ServerSpec | null;
+} = {
   local: { cmd: "node", args: ["dist/index.js"] },
 
-  // Opcionales: si los tienes disponibles
   fs: process.env.MCP_FS_CMD
     ? {
         cmd: process.env.MCP_FS_CMD!,

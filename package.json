@@ -8,7 +8,8 @@
     "server": "node dist/index.js",
     "host": "node dist/host/cli.js",
     "demo:clips": "node dist/tests/list-and-call.js",
-    "demo:ffmpeg": "node dist/tests/test-ffmpeg.js"
+    "demo:ffmpeg": "node dist/tests/test-ffmpeg.js",
+    "demo": "powershell -ExecutionPolicy Bypass -File ./scripts/demo.ps1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.17.5",

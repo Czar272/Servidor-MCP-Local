@@ -5,8 +5,8 @@
   "params": {
     "name": "clips",
     "arguments": {
-      "video": "samples/videos/videoSample1.mp4",
-      "transcript": "samples/transcripts/transcript_test1.srt",
+      "video": "src/samples/videos/videoSample1.mp4",
+      "transcript": "src/samples/transcripts/transcript_test1.srt",
       "count": 2,
       "minSec": 20,
       "maxSec": 25,

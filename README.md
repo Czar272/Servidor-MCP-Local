@@ -23,7 +23,7 @@ npm run build
 ```bash
 npm run host
 # then type commands:
-# /clips samples/videos/videoSample1.mp4 2 20 30
+# /clips src/samples/videos/videoSample1.mp4 2 20 30
 # /subtitles clip_0.mp4 samples/transcripts/transcript_test1.srt
 # /publish youtube clip_0.mp4 "My Short Title"
 ```

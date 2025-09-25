@@ -1,20 +1,22 @@
 import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
 import { logJsonl } from "./logger.js";
 
-type Msg = {
+export type JsonRpcMsg = {
   jsonrpc: "2.0";
   id?: number;
   method?: string;
   params?: any;
   result?: any;
-  error?: any;
+  error?: { code: number; message: string; data?: any };
 };
+
+type Sendable = Omit<JsonRpcMsg, "jsonrpc" | "id">;
 
 export class MCPClient {
   private proc!: ChildProcessWithoutNullStreams;
   private buf = "";
-  private id = 0;
-  private pending = new Map<number, (msg: Msg) => void>();
+  private seq = 0;
+  private pending = new Map<number, (msg: JsonRpcMsg) => void>();
   name: string;
 
   constructor(name: string) {
@@ -32,19 +34,19 @@ export class MCPClient {
 
   private onData(str: string) {
     this.buf += str;
-    let i;
+    let i: number;
     while ((i = this.buf.indexOf("\n")) >= 0) {
       const line = this.buf.slice(0, i).trim();
       this.buf = this.buf.slice(i + 1);
       if (!line) continue;
-      let msg: Msg;
+      let msg: JsonRpcMsg;
       try {
         msg = JSON.parse(line);
       } catch {
         continue;
       }
       logJsonl(`${this.name}.rx.jsonl`, msg);
-      if (msg.id && this.pending.has(msg.id)) {
+      if (typeof msg.id === "number" && this.pending.has(msg.id)) {
         const r = this.pending.get(msg.id)!;
         this.pending.delete(msg.id);
         r(msg);
@@ -52,24 +54,18 @@ export class MCPClient {
     }
   }
 
-  private send(msg: Omit<Msg, "jsonrpc" | "id">): Promise<Msg> {
-    const id = ++this.id;
-    // quitamos por si acaso propiedades que no queremos pisar
-    const {
-      /* @ts-ignore */ jsonrpc: _jr,
-      /* @ts-ignore */ id: _id,
-      ...rest
-    } = msg as any;
-    const full: Msg = { jsonrpc: "2.0", id, ...rest };
+  private send(msg: Sendable): Promise<JsonRpcMsg> {
+    const id = ++this.seq;
+    const full: JsonRpcMsg = { jsonrpc: "2.0", id, ...msg };
     logJsonl(`${this.name}.tx.jsonl`, full);
     this.proc.stdin.write(JSON.stringify(full) + "\n");
     return new Promise((res) => this.pending.set(id, res));
   }
 
   private notify(method: string, params?: any) {
-    const m = { jsonrpc: "2.0" as const, method, params };
-    logJsonl(`${this.name}.tx.jsonl`, m);
-    this.proc.stdin.write(JSON.stringify(m) + "\n");
+    const notif = { jsonrpc: "2.0" as const, method, params };
+    logJsonl(`${this.name}.tx.jsonl`, notif);
+    this.proc.stdin.write(JSON.stringify(notif) + "\n");
   }
 
   async initialize() {
@@ -85,8 +81,9 @@ export class MCPClient {
     return init;
   }
 
-  async listTools() {
+  async listTools(): Promise<{ name: string; description?: string }[]> {
     const res = await this.send({ method: "tools/list" });
+    if (res.error) throw new Error(res.error.message);
     return res.result?.tools ?? [];
   }
 
@@ -96,6 +93,15 @@ export class MCPClient {
       params: { name, arguments: args },
     });
     return res;
+  }
+
+  async callToolSafe(name: string, args: any): Promise<string> {
+    const res = await this.callTool(name, args);
+    if (res.error) throw new Error(res.error.message);
+    const c0 = res.result?.content?.[0];
+    const txt =
+      typeof c0?.text === "string" ? c0.text : JSON.stringify(res.result ?? {});
+    return txt;
   }
 
   async stop() {
