@@ -39,6 +39,10 @@ function escapeForDrawtext(p: string): string {
   return p.replace(/\\/g, "/").replace(/:/g, "\\:").replace(/'/g, "\\'");
 }
 
+function escapeForFilterPath(p: string): string {
+  return p.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+}
+
 export async function cutClips(
   video: string,
   count: number,
@@ -119,22 +123,39 @@ export async function addSubtitles(
   video: string,
   srtPath: string
 ): Promise<string> {
-  const src = resolveMediaPath(video);
-  const srt = resolveMediaPath(srtPath);
+  const src = path.isAbsolute(video)
+    ? video
+    : path.resolve(process.cwd(), video);
+  const srt = path.isAbsolute(srtPath)
+    ? srtPath
+    : path.resolve(process.cwd(), srtPath);
+
+  if (!fs.existsSync(src)) throw new Error(`Video not found: ${src}`);
+  if (!fs.existsSync(srt)) throw new Error(`SRT not found: ${srt}`);
+
   const out = path.resolve(`subtitled_${path.basename(video)}`);
+
+  // Usar filename= y ruta escapada. Añadimos -sub_charenc UTF-8 por si el SRT tiene acentos.
+  const filter = `subtitles=filename='${escapeForFilterPath(
+    srt
+  )}':charenc=UTF-8`;
+
   await runFFmpeg([
     "-y",
     "-i",
     src,
     "-vf",
-    `subtitles=${srt.replace(/\\/g, "\\\\")}`,
+    filter,
     "-c:v",
     "libx264",
     "-pix_fmt",
     "yuv420p",
     "-c:a",
     "copy",
+    "-movflags",
+    "+faststart",
     out,
   ]);
+
   return out;
 }
