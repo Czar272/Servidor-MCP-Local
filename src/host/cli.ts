@@ -7,6 +7,7 @@ import { routeCall } from "./router.js";
 import { logJsonl } from "./logger.js";
 import "dotenv/config";
 import { runAgentRepoWorkflow } from "./agent.js";
+import { runAgentRepurpose } from "./agent-repurpose.js";
 
 async function main() {
   const mem = new ConversationMemory(12);
@@ -26,6 +27,10 @@ async function main() {
     gitClient = new MCPClient("git");
     await gitClient.start(servers.git.cmd, servers.git.args);
   }
+
+  const localClient = servers.local ? new MCPClient("local") : null;
+  if (localClient)
+    await localClient.start(servers.local.cmd, servers.local.args);
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -199,6 +204,34 @@ async function main() {
           console.error("Agent error:", e.message);
         }
 
+        rl.prompt();
+        return;
+      }
+
+      if (input.startsWith("/shorts ")) {
+        const instruction = input.slice(8).trim();
+        if (!localClient) {
+          console.error("Server 'local' no disponible");
+          rl.prompt();
+          return;
+        }
+
+        try {
+          const result = await runAgentRepurpose(localClient, instruction, {
+            count: 3,
+            minSec: 20,
+            maxSec: 45,
+            withGameplay: false,
+          });
+          console.error("== Repurpose plan ==");
+          console.error(JSON.stringify(result.plan, null, 2));
+          console.error("== Clips generados ==");
+          console.error(result.clips.join("\n"));
+          console.error("== Outputs ==");
+          console.error(JSON.stringify(result.outputs, null, 2));
+        } catch (e: any) {
+          console.error("Repurpose error:", e.message);
+        }
         rl.prompt();
         return;
       }
