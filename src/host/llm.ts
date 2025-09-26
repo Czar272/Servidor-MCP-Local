@@ -8,7 +8,63 @@ const API = "https://api.anthropic.com/v1/messages";
 const KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = process.env.ANTHROPIC_MODEL;
 
+type AnthropicTextBlock = { type: "text"; text: string };
+type AnthropicMessageOk = {
+  id: string;
+  type: "message";
+  role: "assistant";
+  content: AnthropicTextBlock[];
+  stop_reason?: string | null;
+  stop_sequence?: string | null;
+};
+type AnthropicError = {
+  type: "error";
+  error: { type: string; message: string };
+};
+
+type AnthropicResponse =
+  | AnthropicMessageOk
+  | AnthropicError
+  | Record<string, unknown>;
+
 type Plan = { tool: string; args: any; server?: "local" | "fs" | "git" };
+type Opts = { maxTokens?: number };
+
+export async function askLLM(system: string, user: string, opts: Opts = {}) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL ?? "claude-opus-4-1-20250805",
+      max_tokens: opts.maxTokens ?? 800,
+      system,
+      messages: [{ role: "user", content: user }],
+    }),
+  });
+
+  // Error HTTP
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Anthropic HTTP ${res.status}: ${txt}`);
+  }
+
+  const data = (await res.json()) as AnthropicResponse;
+
+  // Error de la API
+  if ((data as AnthropicError).type === "error") {
+    const e = (data as AnthropicError).error;
+    throw new Error(`Anthropic API error: ${e.type}: ${e.message}`);
+  }
+
+  const msg = data as AnthropicMessageOk;
+  const text = msg?.content?.[0]?.type === "text" ? msg.content[0].text : "";
+
+  return (text ?? "").trim();
+}
 
 export async function llmPlan(
   goal: string,

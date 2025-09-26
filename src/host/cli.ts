@@ -6,6 +6,7 @@ import { llmChat, llmPlan } from "./llm.js";
 import { routeCall } from "./router.js";
 import { logJsonl } from "./logger.js";
 import "dotenv/config";
+import { runAgentRepoWorkflow } from "./agent.js";
 
 async function main() {
   const mem = new ConversationMemory(12);
@@ -173,6 +174,31 @@ async function main() {
         const answer = await llmChat(question, mem);
         console.error(answer);
         mem.push("assistant", answer);
+        rl.prompt();
+        return;
+      }
+
+      if (input.startsWith("/agent ")) {
+        const instruction = input.slice(7).trim();
+        if (!instruction) {
+          console.error("Uso: /agent <instruccion en lenguaje natural>");
+          rl.prompt();
+          return;
+        }
+        try {
+          const result = await runAgentRepoWorkflow(
+            fsClient,
+            gitClient,
+            instruction
+          );
+          console.error("Agent plan");
+          console.error(JSON.stringify(result.steps, null, 2));
+          console.error("Agent Outputs");
+          console.error(JSON.stringify(result.outputs, null, 2));
+        } catch (e: any) {
+          console.error("Agent error:", e.message);
+        }
+
         rl.prompt();
         return;
       }
