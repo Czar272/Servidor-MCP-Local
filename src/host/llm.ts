@@ -1,4 +1,3 @@
-// src/host/llm.ts
 import "dotenv/config";
 import fetch from "node-fetch";
 import { ConversationMemory } from "./memory.js";

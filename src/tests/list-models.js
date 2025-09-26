@@ -1,4 +1,3 @@
-// list-models.js (ESM)
 import "dotenv/config";
 import fetch from "node-fetch";
 
