@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 export type ServerSpec = { cmd: string; args: string[] };
 
 export const servers: {

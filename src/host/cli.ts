@@ -1,4 +1,3 @@
-// src/host/cli.ts
 import readline from "node:readline";
 import { MCPClient } from "./mcpClient.js";
 import { servers } from "./config.js";
@@ -6,6 +5,7 @@ import { ConversationMemory } from "./memory.js";
 import { llmChat, llmPlan } from "./llm.js";
 import { routeCall } from "./router.js";
 import { logJsonl } from "./logger.js";
+import "dotenv/config";
 
 async function main() {
   const mem = new ConversationMemory(12);
@@ -109,7 +109,7 @@ async function main() {
           args,
           target as any
         );
-        console.error("▶", txt);
+        console.error("<>", txt);
         mem.push("assistant", txt);
         rl.prompt();
         return;
